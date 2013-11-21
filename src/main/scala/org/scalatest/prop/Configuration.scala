@@ -15,7 +15,7 @@
  */
 package org.scalatest.prop
 
-import org.scalacheck.Test.Params
+import org.scalacheck.Test.Parameters
 
 /**
  * Trait providing methods and classes used to configure property checks provided by the
@@ -279,13 +279,13 @@ trait Configuration {
   private[prop] def getParams(
     configParams: Seq[PropertyCheckConfigParam],
     config: PropertyCheckConfig
-  ): Params = {
+  ): Parameters = {
 
-    var minSuccessful = -1
-    var maxDiscarded = -1
-    var minSize = -1
-    var maxSize = -1
-    var workers = -1
+    var _minSuccessful = -1
+    var _maxDiscarded = -1
+    var _minSize = -1
+    var _maxSize = -1
+    var _workers = -1
 
     var minSuccessfulTotalFound = 0
     var maxDiscardedTotalFound = 0
@@ -296,46 +296,44 @@ trait Configuration {
     for (configParam <- configParams) {
       configParam match {
         case param: MinSuccessful =>
-          minSuccessful = param.value
+          _minSuccessful = param.value
           minSuccessfulTotalFound += 1
         case param: MaxDiscarded =>
-          maxDiscarded = param.value
+          _maxDiscarded = param.value
           maxDiscardedTotalFound += 1
         case param: MinSize =>
-          minSize = param.value
+          _minSize = param.value
           minSizeTotalFound += 1
         case param: MaxSize =>
-          maxSize = param.value
+          _maxSize = param.value
           maxSizeTotalFound += 1
         case param: Workers =>
-          workers = param.value
+          _workers = param.value
           workersTotalFound += 1
       }
     }
   
     if (minSuccessfulTotalFound > 1)
-      throw new IllegalArgumentException("can pass at most MinSuccessful config parameters, but " + minSuccessfulTotalFound + " were passed")
+      throw new IllegalArgumentException("can pass at most one MinSuccessful config parameters, but " + minSuccessfulTotalFound + " were passed")
     if (maxDiscardedTotalFound > 1)
-      throw new IllegalArgumentException("can pass at most MaxDiscarded config parameters, but " + maxDiscardedTotalFound + " were passed")
+      throw new IllegalArgumentException("can pass at most one MaxDiscarded config parameters, but " + maxDiscardedTotalFound + " were passed")
     if (minSizeTotalFound > 1)
-      throw new IllegalArgumentException("can pass at most MinSize config parameters, but " + minSizeTotalFound + " were passed")
+      throw new IllegalArgumentException("can pass at most one MinSize config parameters, but " + minSizeTotalFound + " were passed")
     if (maxSizeTotalFound > 1)
-      throw new IllegalArgumentException("can pass at most MaxSize config parameters, but " + maxSizeTotalFound + " were passed")
+      throw new IllegalArgumentException("can pass at most one MaxSize config parameters, but " + maxSizeTotalFound + " were passed")
     if (workersTotalFound > 1)
-      throw new IllegalArgumentException("can pass at most Workers config parameters, but " + workersTotalFound + " were passed")
+      throw new IllegalArgumentException("can pass at most one Workers config parameters, but " + workersTotalFound + " were passed")
 
     // Adding one to maxDiscarded, because I think it is easier to understand that maxDiscarded means the maximum number of times
     // allowed that discarding will occur and the property can still pass. One more discarded evaluation than this number and the property will fail
     // because of it. ScalaCheck fails at exactly maxDiscardedTests.
-    Params(
-      if (minSuccessful != -1) minSuccessful else config.minSuccessful,
-      (if (maxDiscarded != -1) maxDiscarded else config.maxDiscarded) + 1,
-      if (minSize != -1) minSize else config.minSize,
-      if (maxSize != -1) maxSize else config.maxSize,
-      Params().rng,
-      if (workers != -1) workers else config.workers,
-      Params().testCallback
-    )
+    new Parameters.Default {
+      override val minSuccessfulTests = if (_minSuccessful != -1) _minSuccessful else config.minSuccessful
+      override val minSize = if (_minSize != -1) _minSize else config.minSize
+      override val maxSize = if (_maxSize != -1) _maxSize else config.maxSize
+      override val workers =  if (_workers != -1) _workers else config.workers
+      // TODO-maxDiscarded: val maxDiscardRatio: Float =  (if (_maxDiscarded != -1) _maxDiscarded else config.maxDiscarded) + 1,
+    }
   }
 
   /**

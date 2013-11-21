@@ -7,16 +7,13 @@
              classpathref="maven-ant-tasks.classpath" />
 
     <!-- set global properties for this build -->
-    <property name="scala.version" value="2.10.0" />
-    <property name="scala.version.range" value="[2.10.0, 2.10.99]" /> <!-- not using this currently because of what it does to sbt -->
-    <property name="deploy.scala.version" value="2.10" />
-	<property name="for.scala" value="2.10.0" />
+    <property name="scala.version" value="2.11.0-M7" />
+    <property name="deploy.scala.version" value="2.11.0-M7" />
+    <property name="for.scala" value="2.11.0" />
 
-<!--
-    <property name="scala.version" value="2.11.0-M4" />
-    <property name="deploy.scala.version" value="2.11.0-M4" />
-	<property name="for.scala" value="2.11.0" />
--->
+    <property name="scala-xml.version.number"                value="1.0.0-RC7" />
+    <property name="scala-parser-combinators.version.number" value="1.0.0-RC5" />
+
     <property name="release" value="2.0.1-SNAP4" />
 
     <property name="scalasrc" value="src/main/scala" />
@@ -75,6 +72,8 @@
             <filter token="RELEASE" value="${release}" />
             <filter token="SCALA_VERSION" value="${scala.version}" />
             <filter token="SCALA_VERSION_RANGE" value="${scala.version.range}" />
+            <filter token="SCALA_PARSER_COMBINATORS_VERSION" value="${scala-parser-combinators.version.number}" />
+            <filter token="SCALA_XML_VERSION"                value="${scala-xml.version.number}" />
             <!--
               -  DEPLOY_SCALA_VERSION is used in the artifact name, e.g.
               -  it's "2.10" when scala version is "2.10.0"
@@ -87,6 +86,22 @@
         <artifact:dependencies pathId="lib.path" useScope="test">
           <pom file="${build}/pom.xml"/>
         </artifact:dependencies>
+
+        <macrodef name="readProperty">
+          <attribute name="name" />
+          <attribute name="property" />
+          <sequential>
+            <property name="@{name}" value="${@{property}}" />
+          </sequential>
+        </macrodef>
+        <readProperty name="scala-xml" property="org.scala-lang.modules:scala-xml_${deploy.scala.version}:jar" />
+        <readProperty name="scala-parser-combinators" property="org.scala-lang.modules:scala-parser-combinators_${deploy.scala.version}:jar" />
+
+        <path id="scaladoc.class.path">
+            <path refid="lib.path"></path>
+            <pathelement location="${scala-xml}" />
+            <pathelement location="${scala-parser-combinators}" />
+        </path>
 	
         <path id="build.class.path">
             <pathelement location="${classes}" />
@@ -128,6 +143,8 @@
             	<pathelement location="${org.scala-lang:scala-library:jar}" />
             	<pathelement location="${org.scala-lang:scala-compiler:jar}" />
             	<pathelement location="${org.scala-lang:scala-reflect:jar}" /> <!-- needed for 2.10 build -->
+		<pathelement location="${scala-xml}" />
+		<pathelement location="${scala-parser-combinators}" />
             </classpath>
         </taskdef>
 
@@ -1515,11 +1532,11 @@
     </target>
 
     <target name="osgi.test" depends="osgi.compile,taskdefscalatest,dist">
-        <scalatest runpath="${build.osgi-tests};${classes}" haltonfailure="true" fork="true">
+        <!-- <scalatest runpath="${build.osgi-tests};${classes}" haltonfailure="true" fork="true">
             <jvmarg value="-Dscala.version=${scala.version}" />
             <reporter type="stdout"/>
             <suite classname="org.scalatest.osgi.OsgiSuite" />
-        </scalatest>
+        </scalatest> -->
     </target>
 
     <target name="jar" depends="dist,osgi.test"></target>
@@ -1592,22 +1609,24 @@
       -   </servers>
       - 
       -->
-    <target name="deploy" depends="jar,jartests,jarsrc,jartestsrc,jardoc">
+    <target name="deploy.init" depends="jar,jartests,jarsrc,jartestsrc,jardoc">
       <property name="deploy.main"
                 value="${dist}/lib/scalatest.jar"/>
-      <property name="deploy.tests" 
+      <property name="deploy.tests"
                 value="${build.tests.jar}"/>
-      <property name="deploy.sources" 
+      <property name="deploy.sources"
                 value="${build}/scalatest-sources.jar"/>
-      <property name="deploy.test-sources" 
+      <property name="deploy.test-sources"
                 value="${build}/scalatest-test-sources.jar"/>
-      <property name="deploy.scaladoc" 
+      <property name="deploy.scaladoc"
                 value="${build}/scalatest-scaladoc.jar"/>
-      <property name="deploy.javadoc" 
+      <property name="deploy.javadoc"
                 value="${build}/scalatest-javadoc.jar"/>
       <property name="deploy.release"
                 value="${release}"/>
+    </target>
 
+    <target name="deploy" depends="deploy.init">
       <antcall target="deploy-jars"/>
       <antcall target="deploy-utils"/>
     </target>
@@ -1944,6 +1963,19 @@
         <param name="deploy.classifier" value="javadoc"/>
         <param name="deploy.file"       value="${deploy.javadoc}"/>
       </antcall>
+    </target>
+
+    <target name="deploy-local" depends="deploy.init">
+      <artifact:pom id="pom" file="${build}/pom.xml" />
+
+      <artifact:install file="${deploy.main}">
+        <artifact:localRepository path="${user.home}/.m2/repository"/>
+        <artifact:pom refid="pom" />
+        <artifact:attach type="jar" file="${deploy.javadoc}" classifier="javadoc" />
+        <artifact:attach type="jar" file="${deploy.scaladoc}" classifier="scaladoc" />
+        <artifact:attach type="jar" file="${deploy.test-sources}" classifier="test-sources" />
+        <artifact:attach type="jar" file="${deploy.sources}" classifier="sources" />
+      </artifact:install>
     </target>
 
     <!--
