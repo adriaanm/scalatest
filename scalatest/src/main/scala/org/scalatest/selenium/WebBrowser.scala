@@ -4559,7 +4559,7 @@ trait HtmlUnit extends WebBrowser with Driver with ScreenshotCapturer {
    * webDriver.setJavascriptEnabled(false)
    * </pre>
    */
-  implicit val webDriver = new HtmlUnitDriver()
+  implicit val webDriver: HtmlUnitDriver = new HtmlUnitDriver()
 
   webDriver.setJavascriptEnabled(true)
 
@@ -4631,7 +4631,7 @@ trait Safari extends WebBrowser with Driver with ScreenshotCapturer {
   /**
    * <code>WebBrowser</code> subtrait that defines an implicit <code>WebDriver</code> for Safari (an <code>org.openqa.selenium.safari.SafariDriver</code>).
    */
-  implicit val webDriver = new SafariDriver()
+  implicit val webDriver: SafariDriver = new SafariDriver()
 
   /**
    * Captures a screenshot and saves it as a file in the specified directory.
@@ -4655,7 +4655,7 @@ trait Chrome extends WebBrowser with Driver with ScreenshotCapturer {
   /**
    * <code>WebBrowser</code> subtrait that defines an implicit <code>WebDriver</code> for Chrome (an <code>org.openqa.selenium.chrome.ChromeDriver</code>).
    */
-  implicit val webDriver = new ChromeDriver()
+  implicit val webDriver: ChromeDriver = new ChromeDriver()
 
   /**
    * Captures a screenshot and saves it as a file in the specified directory.
@@ -4679,7 +4679,7 @@ trait InternetExplorer extends WebBrowser with Driver with ScreenshotCapturer {
   /**
    * <code>WebBrowser</code> subtrait that defines an implicit <code>WebDriver</code> for Internet Explorer (an <code>org.openqa.selenium.ie.InternetExplorerDriver</code>).
    */
-  implicit val webDriver = new InternetExplorerDriver()
+  implicit val webDriver: InternetExplorerDriver = new InternetExplorerDriver()
 
   /**
    * Captures a screenshot and saves it as a file in the specified directory.
